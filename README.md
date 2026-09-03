@@ -56,7 +56,7 @@ Give host-native microservices a consistent, disposable, and shareable data/mess
 | pgadmin    | `dpage/pgadmin4:latest`   | `infra-pgadmin`    | `5050` (→ container `80`)     | Web GUI for browsing/managing PostgreSQL |
 | cloudbeaver | `dbeaver/cloudbeaver:latest` | `infra-cloudbeaver` | `8978` (→ container `8978`) | Universal DB manager (SQL editor/browser) for Postgres, MariaDB, MongoDB — handy for MariaDB, which has no dedicated GUI here |
 
-All services join a single bridge network, `infra_net`, and the compose project is named `shared-local-infra` (set via the top-level `name:` field; `COMPOSE_PROJECT_NAME` in `.env` is also available but the explicit `name:` takes precedence).
+All services join a single bridge network, `infra_net`. The compose project is named `shared-local-infra`, set both via the top-level `name:` field and via `COMPOSE_PROJECT_NAME` in `.env` — the two are kept in sync deliberately, since `COMPOSE_PROJECT_NAME` actually takes precedence over the top-level `name:` field when both are present (not the other way around), and a mismatch here would silently make Compose manage a different project than the file describes.
 
 `krakend` waits on `service_healthy` for all five data/messaging services before starting, so it never boots ahead of dependencies it might proxy to.
 
@@ -120,7 +120,7 @@ Steps 1 (`make env`), 3–4 (`make bootstrap`), and 5 (`make up`) below can be r
 
 | Variable | Default | Notes |
 |---|---|---|
-| `COMPOSE_PROJECT_NAME` | `shared-local-infra` | Informational; `docker-compose.yml`'s top-level `name:` (`shared-local-infra`) is what actually names the project, kept in sync here to avoid confusion |
+| `COMPOSE_PROJECT_NAME` | `shared-local-infra` | Takes precedence over `docker-compose.yml`'s top-level `name:` field — kept identical to it so the project name is unambiguous |
 | `MARIADB_PORT` | `3306` | Host port |
 | `POSTGRES_PORT` | `5432` | Host port |
 | `MONGODB_PORT` | `27017` | Host port |
