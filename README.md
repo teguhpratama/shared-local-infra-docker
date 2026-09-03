@@ -120,7 +120,7 @@ Steps 1 (`make env`), 3–4 (`make bootstrap`), and 5 (`make up`) below can be r
 
 | Variable | Default | Notes |
 |---|---|---|
-| `COMPOSE_PROJECT_NAME` | `shared-infra` | Informational; `docker-compose.yml`'s top-level `name:` (`shared-local-infra`) is what actually names the project |
+| `COMPOSE_PROJECT_NAME` | `shared-local-infra` | Informational; `docker-compose.yml`'s top-level `name:` (`shared-local-infra`) is what actually names the project, kept in sync here to avoid confusion |
 | `MARIADB_PORT` | `3306` | Host port |
 | `POSTGRES_PORT` | `5432` | Host port |
 | `MONGODB_PORT` | `27017` | Host port |
