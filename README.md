@@ -31,7 +31,10 @@ Give host-native microservices a consistent, disposable, and shareable data/mess
 │   ├── mongodb/
 │   ├── redis/
 │   ├── rabbitmq/
-│   └── portainer/
+│   ├── portainer/
+│   ├── redisinsight/
+│   ├── pgadmin/
+│   └── cloudbeaver/
 └── docs/
 ```
 
@@ -48,6 +51,10 @@ Give host-native microservices a consistent, disposable, and shareable data/mess
 | rabbitmq   | `rabbitmq:4-management`   | `infra-rabbitmq`   | `5672` (AMQP), `15672` (mgmt UI) | Message broker + management dashboard |
 | krakend    | `devopsfaith/krakend:2.7` | `infra-krakend`    | `8088` (→ container `8080`)   | API gateway, proxies to host-native services |
 | portainer  | `portainer/portainer-ce:lts` | `infra-portainer` | `9000` (HTTP UI), `9443` (HTTPS UI), `8000` (Edge tunnel) | Docker management UI — local containers by default, plus remote environments via Edge Agent |
+| redisinsight | `redis/redisinsight:latest` | `infra-redisinsight` | `5540` (→ container `5540`) | Web GUI for browsing/managing Redis |
+| mongo-express | `mongo-express:1-20-alpine3.19` | `infra-mongo-express` | `8081` (→ container `8081`) | Web GUI for browsing/managing MongoDB, pre-wired to the `mongodb` service |
+| pgadmin    | `dpage/pgadmin4:latest`   | `infra-pgadmin`    | `5050` (→ container `80`)     | Web GUI for browsing/managing PostgreSQL |
+| cloudbeaver | `dbeaver/cloudbeaver:latest` | `infra-cloudbeaver` | `8978` (→ container `8978`) | Universal DB manager (SQL editor/browser) for Postgres, MariaDB, MongoDB — handy for MariaDB, which has no dedicated GUI here |
 
 All services join a single bridge network, `infra_net`, and the compose project is named `shared-local-infra` (set via the top-level `name:` field; `COMPOSE_PROJECT_NAME` in `.env` is also available but the explicit `name:` takes precedence).
 
@@ -78,7 +85,7 @@ All services join a single bridge network, `infra_net`, and the compose project 
 3. Data directories are created automatically by Docker on first `up`, but you can pre-create them:
 
    ```bash
-   mkdir -p ~/._infra-docker/data/{mariadb,postgres,mongodb,redis,rabbitmq}
+   mkdir -p ~/._infra-docker/data/{mariadb,postgres,mongodb,redis,rabbitmq,redisinsight,pgadmin,cloudbeaver}
    ```
 
 4. **Linux only** — normalize bind-mount ownership:
@@ -119,6 +126,13 @@ All services join a single bridge network, `infra_net`, and the compose project 
 | `RABBITMQ_AMQP_PORT` | `5672` | Host port for AMQP |
 | `RABBITMQ_MGMT_PORT` | `15672` | Host port for the management UI |
 | `KRAKEND_PORT` | `8088` | Host port; **do not** pass this into the krakend container's env — see [Gotcha #2](#gotcha-2-krakend_port-collision) |
+| `PORTAINER_PORT` / `PORTAINER_HTTPS_PORT` / `PORTAINER_EDGE_PORT` | `9000` / `9443` / `8000` | Host ports |
+| `REDISINSIGHT_PORT` | `5540` | Host port for the RedisInsight web UI |
+| `MONGO_EXPRESS_PORT` | `8081` | Host port for the Mongo Express web UI |
+| `PGADMIN_PORT` | `5050` | Host port for the pgAdmin web UI (maps to container port `80`) |
+| `CLOUDBEAVER_PORT` | `8978` | Host port for the CloudBeaver web UI |
+| `MONGO_EXPRESS_USERNAME` / `MONGO_EXPRESS_PASSWORD` | — | HTTP basic-auth credentials guarding the Mongo Express web UI (separate from the Mongo root user, which it uses internally to connect) |
+| `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD` | — | Login credentials for the pgAdmin web UI |
 | `MARIADB_ROOT_PASSWORD` / `MARIADB_DATABASE` / `MARIADB_USER` / `MARIADB_PASSWORD` | — | MariaDB credentials/schema |
 | `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | — | Postgres credentials/schema |
 | `POSTGRES_PLATFORM` | *(empty)* | Only set to `linux/amd64` if you hit arch-specific plugin issues on Apple Silicon; currently unused by the compose file (commented out) |
@@ -247,6 +261,22 @@ Create the admin account on first visit (Portainer disables itself if left uncon
 4. Once the remote agent checks in, the environment shows up in Portainer's environment list; browse its containers/logs from here like any local one.
 
 This machine must stay reachable from the remote host on `PORTAINER_EDGE_PORT` for the tunnel to establish (may need a port-forward/tunnel depending on network topology — that's a devops-side detail, not a compose-file concern).
+
+## Database & Cache GUIs
+
+Four local-only admin UIs, one per data store (plus a universal one for MariaDB). None of them are exposed beyond `127.0.0.1` unless you change the port bindings.
+
+**RedisInsight** — `http://localhost:${REDISINSIGHT_PORT}`
+No login. On first visit, add a connection with host `redis`, port `6379`, and the password from `REDIS_PASSWORD` (containers reach each other by service name over `infra_net`).
+
+**Mongo Express** — `http://localhost:${MONGO_EXPRESS_PORT}`
+HTTP basic-auth login using `MONGO_EXPRESS_USERNAME` / `MONGO_EXPRESS_PASSWORD`. Already pre-wired to the `mongodb` service via its root credentials — no manual connection setup needed.
+
+**pgAdmin** — `http://localhost:${PGADMIN_PORT}`
+Log in with `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`. Register a new server pointing at host `postgres`, port `5432`, using `POSTGRES_USER` / `POSTGRES_PASSWORD`.
+
+**CloudBeaver** — `http://localhost:${CLOUDBEAVER_PORT}`
+Create the admin account on first visit (same pattern as Portainer — don't leave it unconfigured for long). Add connections using the in-network hostnames: `postgres:5432`, `mariadb:3306`, or `mongodb:27017`, with the matching credentials from `.env`.
 
 ## Day-2 Operations
 
