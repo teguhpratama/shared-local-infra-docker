@@ -67,6 +67,8 @@ All services join a single bridge network, `infra_net`, and the compose project 
 
 ## Setup
 
+Steps 1 (`make env`), 3–4 (`make bootstrap`), and 5 (`make up`) below can be run via the `Makefile` — see [Day-2 Operations](#day-2-operations).
+
 1. Copy the env template and fill in real values:
 
    ```bash
@@ -279,6 +281,8 @@ Log in with `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD`. Register a new
 Create the admin account on first visit (same pattern as Portainer — don't leave it unconfigured for long). Add connections using the in-network hostnames: `postgres:5432`, `mariadb:3306`, or `mongodb:27017`, with the matching credentials from `.env`.
 
 ## Day-2 Operations
+
+A `Makefile` wraps the commands below — run `make help` for the full list (`make up`, `make down`, `make restart SERVICE=postgres`, `make logs SERVICE=krakend`, `make check`, `make urls`, etc.). The raw commands still work directly and are documented here for reference:
 
 ```bash
 # Start
